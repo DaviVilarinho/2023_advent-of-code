@@ -25,6 +25,28 @@ const sol1 = (input) => {
     return ways_to_beat.reduce((a, b) => a * b);
 }
 
+const sol2 = (input) => {
+    let lines = input.split('\n');
+    lines.pop();
+
+    let time_distances_matrix = lines.map(line => {
+        let metric = line.split(':').slice(1);
+        return [Number(metric.pop().trim().split(' ').filter(Boolean).reduce((a, b) => a + b, ''))];
+    })
+
+    let ways_to_beat = [];
+    for (let race = 0; race < time_distances_matrix[0].length; race++) {
+        let [time, record] = [time_distances_matrix[0][race], time_distances_matrix[1][race]];
+        let possible_time_holdings = []
+        for (let t = 0; t <= time; t++) {
+            possible_time_holdings.push(distanceTravelledBySecondHold(t, time));
+        }
+        ways_to_beat.push(possible_time_holdings.filter(move => move > record).length);
+    }
+
+    return ways_to_beat.reduce((a, b) => a * b);
+}
+
 const test = () => {
     console.log(`Don't hold ${distanceTravelledBySecondHold(0, 7)} == 0`);
     console.log(`Hold 1 ${distanceTravelledBySecondHold(1, 7)} == 6`);
@@ -40,6 +62,8 @@ Distance: 9  40  200
     console.log(`Example: ${sol1(example_input)} == 288`);
 
     console.log(`Part 1: ${sol1(fs.readFileSync('day_6_input.txt', 'utf8'))}`);
+    console.log(`Part 2: ${sol2(fs.readFileSync('day_6_input.txt', 'utf8'))}`);
+
 }
 
 test();
