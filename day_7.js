@@ -1,4 +1,5 @@
 const fs = require('fs');
+const CARDS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
 const getCamelCardRank = (hand) => {
     let cardOccurence = {};
@@ -31,7 +32,7 @@ const getCamelCardRank = (hand) => {
     return 0;
 }
 
-const cardToValue = (card) => {
+const cardToValueBase = (card) => {
     switch (card) {
         case 'A':
             return 14;
@@ -57,7 +58,7 @@ const compareFirstAndSecond = (first, second) => {
     return 0;
 }
 
-const winnerByMaxCard = (hand, otherHand) => {
+const winnerByMaxCard = (hand, otherHand, cardToValue) => {
     for (let i = 0; i < hand.length; i++) {
         let handMax = cardToValue(hand[i]);
         let otherHandMax = cardToValue(otherHand[i]);
@@ -69,6 +70,23 @@ const winnerByMaxCard = (hand, otherHand) => {
     return 0;
 }
 
+const cardToValueWithJoker = (card) => {
+    switch (card) {
+        case 'A':
+            return 14;
+        case 'K':
+            return 13;
+        case 'Q':
+            return 12;
+        case 'J':
+            return 1;
+        case 'T':
+            return 10;
+        default:
+            return Number(card);
+    }
+}
+
 const getCamelCardWinner = (hand, otherHand) => {
     let handRank = getCamelCardRank(hand);
     let otherHandRank = getCamelCardRank(otherHand);
@@ -77,7 +95,31 @@ const getCamelCardWinner = (hand, otherHand) => {
     } else if (handRank < otherHandRank) {
         return 1;
     }
-    return winnerByMaxCard(hand, otherHand);
+    return winnerByMaxCard(hand, otherHand, cardToValueBase);
+}
+
+const getCamelCardWinnerWithJoker = (hand, otherHand) => {
+
+    let jokerHand = undefined;
+    if (hand.includes('J')) {
+        jokerHand = CARDS.map(card => hand.replaceAll('J', card)).sort((hand1, hand2) => {
+            return getCamelCardWinner(hand1, hand2);
+        })[0]
+    }
+    let jokerOtherHand = undefined;
+    if (otherHand.includes('J')) {
+        jokerOtherHand = CARDS.map(card => otherHand.replaceAll('J', card)).sort((hand1, hand2) => {
+            return getCamelCardWinner(hand1, hand2);
+        })[0];
+    }
+    let handRank = getCamelCardRank(jokerHand ?? hand);
+    let otherHandRank = getCamelCardRank(jokerOtherHand ?? otherHand);
+    if (handRank > otherHandRank) {
+        return -1;
+    } else if (handRank < otherHandRank) {
+        return 1;
+    }
+    return winnerByMaxCard(hand, otherHand, cardToValueWithJoker);
 }
 
 const generateHands = (cards, handSize) => {
@@ -95,8 +137,7 @@ const generateHands = (cards, handSize) => {
 }
 
 const getAllPossible5Hands = () => {
-    const cards = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-    return generateHands(cards, 5);
+    return generateHands(CARDS, 5).map(hand => hand.join(''));
 }
 
 const sol1 = (input) => {
@@ -134,6 +175,42 @@ const sol1 = (input) => {
     return totalWinnings;
 }
 
+const sol2 = (input) => {
+    let lines = input.split('\n');
+    lines.pop();
+    let games = lines.map(line =>
+        line.trim().split(' ')).map(line => {
+            return {
+                hand: line[0],
+                bet: Number(line.pop()),
+                waysOfWinning: 0,
+                rank: getCamelCardRank(line[0])
+            }
+        });
+    for (let game of games) {
+        for (let everyPossibleWay of getAllPossible5Hands()) {
+            if (getCamelCardWinnerWithJoker(everyPossibleWay, game.hand) == 1) {
+                game.waysOfWinning += 1;
+            }
+        }
+    }
+    let sortedGames = games.sort((game1, game2) => {
+        return getCamelCardWinnerWithJoker(game1.hand, game2.hand);
+    }).reverse();
+    let rank = 1;
+    let totalWinnings = rank * sortedGames[0].bet;
+    for (let i = 1; i < sortedGames.length; i++) {
+        if (getCamelCardWinnerWithJoker(sortedGames[i].hand, sortedGames[i - 1].hand) == 0) {
+            totalWinnings += rank * sortedGames[i].bet;
+        } else {
+            rank += 1;
+            totalWinnings += rank * sortedGames[i].bet;
+        }
+    }
+    return totalWinnings;
+}
+
+
 const test = () => {
     console.log(getCamelCardRank('32T3K'.split('')), 1);
     console.log(getCamelCardRank('KK677'.split('')), 2);
@@ -146,7 +223,19 @@ KK677 28
 KTJJT 220
 QQQJA 483
 `), 6440);
-    console.log(`Part 1: ${sol1(fs.readFileSync('day_7_input.txt', 'utf8'))}`);
+    //console.log(`Part 1: ${sol1(fs.readFileSync('day_7_input.txt', 'utf8'))}`);
+    console.log(getCamelCardWinnerWithJoker('AAAAJ', 'KKKKT'), -1);
+    console.log(getCamelCardWinnerWithJoker('T55J5', 'KTJJT'), 1);
+    console.log(getCamelCardWinnerWithJoker('T55J5', 'QQQJA'), 1);
+    console.log(getCamelCardWinnerWithJoker('QQQJA', 'KTJJT'), 1);
+    console.log(getCamelCardWinnerWithJoker('KTJJT', 'T55J5'), -1);
+    console.log(sol2(`32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483
+`), 5905);
+    console.log(`Part 2: ${sol2(fs.readFileSync('day_7_input.txt', 'utf8'))}`);
 }
 
 test()
