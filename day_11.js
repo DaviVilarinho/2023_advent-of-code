@@ -94,14 +94,15 @@ const sol1 = (input) => {
     universe.pop();
     const expanded = expand(universe);
     const graph = toGraph(expanded);
-    let sum = 0;
+    let shortestDistance = {};
     for (let i = 0; i < graph.nodes.length; i++) {
         let distances = graph.djikstra(graph.nodes[i]);
         for (let j = i + 1; j < graph.nodes.length; j++) {
-            sum += distances[graph.nodes[j]];
+            let pairId = [i, j].sort().join('');
+            shortestDistance[pairId] = distances[graph.nodes[j]] > (shortestDistance[pairId] ?? Infinity) ? shortestDistance[pairId] : distances[graph.nodes[j]];
         }
     }
-    return sum;
+    return Object.values(shortestDistance).reduce((a, b) => a + b, 0);
 };
 const sol2 = (input) => { };
 
