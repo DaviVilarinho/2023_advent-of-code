@@ -1,5 +1,4 @@
 const { readFileSync } = require('fs');
-const { start } = require('repl');
 
 const getContiguousBrokenGroups = (arr) => {
     let contiguousBrokenGroups = [];
@@ -52,8 +51,25 @@ const sol1 = (input) => {
         return arrangementsPerLine(positions, config);
     }).reduce((a, b) => a + b, 0);
 };
-const sol2 = (input) => {
 
+const unfold = (position, config) => {
+    let bigPosition = `${position}`;
+    let bigConfig = `${config}`;
+    for (let i = 0; i < 4; i++) {
+        bigPosition = `${bigPosition}?${position}`;
+        bigConfig = `${bigConfig},${config}`;
+    }
+    return [bigPosition, bigConfig];
+};
+
+const sol2 = (input) => {
+    let inputlines = input.split("\n");
+    inputlines.pop();
+    return inputlines.map(line => {
+        let [positions, config] = line.split(' ');
+        [positions, config] = unfold(positions, config);
+        return arrangementsPerLine(positions, config);
+    }).reduce((a, b) => a + b, 0);
 };
 
 const test_1 = () => {
@@ -75,10 +91,11 @@ const test_1 = () => {
 };
 
 const test_2 = () => {
+    console.log(unfold("???.###", "1,1,3"), ["???.###????.###????.###????.###????.###", "1,1,3,1,1,3,1,1,3,1,1,3,1,1,3"]);
 };
 
 const input = readFileSync('./day_12_input.txt', { encoding: 'utf-8' });
-test_1();
-console.log(`Part 1: ${sol1(input)}`);
+//test_1();
+//console.log(`Part 1: ${sol1(input)}`);
 test_2();
 console.log(`Part 2: ${sol2(input)} `);
