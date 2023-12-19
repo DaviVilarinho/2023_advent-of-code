@@ -29,7 +29,32 @@ const sol1 = (input) => {
     }
     return minDistanceSum;
 };
-const sol2 = (input) => { };
+const sol2 = (input) => {
+    let universe = input.split("\n").map(x => x.split(''));
+    let rows = universe.map(x => x.join(""));
+    let columns = universe[0].map((_, i) => universe.map(x => x[i]).join(""));
+
+    const rowsWithDots = rows.map((_, i) => i).filter(x => !rows[x].includes("#"));
+    const ColumnsWithDots = columns.map((_, i) => i).filter(x => !columns[x].includes("#"));
+
+    let galaxies = [];
+    for (let i = 0; i < rows.length; i++) {
+        let fillRows = rowsWithDots.filter(x => x < i).length * (1000000 - 1);
+        for (let j = 0; j < columns.length; j++) {
+            let fillCols = ColumnsWithDots.filter(x => x < j).length * (1000000 - 1);
+            if (universe[i][j] === "#") {
+                galaxies.push([i + fillRows, j + fillCols]);
+            }
+        }
+    }
+    let minDistanceSum = 0;
+    for (let i = 0; i < galaxies.length; i++) {
+        for (let j = i + 1; j < galaxies.length; j++) {
+            minDistanceSum += distanceToGalaxy(galaxies[i], galaxies[j]);
+        }
+    }
+    return minDistanceSum;
+};
 
 const test_1 = () => {
     let input = `...#......
